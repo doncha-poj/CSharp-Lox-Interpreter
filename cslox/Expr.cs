@@ -9,6 +9,7 @@
         T VisitVariableExpr(Variable expr);
         T VisitAssignExpr(Assign expr);
         T VisitLogicalExpr(Logical expr);
+        T VisitCallExpr(Call expr);
     }
 
     public abstract class Expr
@@ -159,6 +160,31 @@
         public override T Accept<T>(IExprVisitor<T> visitor)
         {
             return visitor.VisitLogicalExpr(this);
+        }
+    }
+
+    /// <summary>
+    /// Represents a function or method call expression in the abstract syntax tree (AST).
+    /// </summary>
+    /// <remarks>A <see cref="Call"/> expression consists of the callee (the entity being called),  the
+    /// arguments passed to the call, and the closing parenthesis token for error reporting. This class is typically
+    /// used in the context of parsing or interpreting code.</remarks>
+    public class Call : Expr
+    {
+        public readonly Expr Callee; // The thing being called
+        public readonly Token Paren;  // The closing ')' for error reporting
+        public readonly List<Expr> Arguments;
+
+        public Call(Expr callee, Token paren, List<Expr> arguments)
+        {
+            Callee = callee;
+            Paren = paren;
+            Arguments = arguments;
+        }
+
+        public override T Accept<T>(IExprVisitor<T> visitor)
+        {
+            return visitor.VisitCallExpr(this);
         }
     }
 }

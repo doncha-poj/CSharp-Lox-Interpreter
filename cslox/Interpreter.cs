@@ -8,12 +8,29 @@ namespace cslox
         private readonly Environment _globals = new Environment();
         private Environment _environment;
 
+        /// <summary>
+        /// A native Lox function that returns the current system time in seconds.
+        /// This is a private class nested inside the Interpreter.
+        /// </summary>
+        private class NativeClock : ILoxCallable
+        {
+            public int Arity => 0;
+
+            public object Call(Interpreter interpreter, List<object> arguments)
+            {
+                return (double)DateTime.Now.Ticks / TimeSpan.TicksPerSecond;
+            }
+
+            public override string ToString()
+            {
+                return "<native fn>";
+            }
+        }
+
         public Interpreter()
         {
             _environment = _globals;
-
-            // You can define native functions here, like clock()
-            // e.g., _globals.Define("clock", new ClockNativeFunction());
+            _globals.Define("clock", new NativeClock());
         }
 
         public void Interpret(List<Stmt> statements)
@@ -219,7 +236,42 @@ namespace cslox
             return null; // Unreachable
         }
 
-        // --- (IsTruthy, IsEqual, Stringify, Check...Operands are all unchanged) ---
+        public object VisitCallExpr(Call expr)
+        {
+            object callee = Evaluate(expr.Callee);
+
+            // Evaluate all the arguments
+            var arguments = new List<object>();
+            foreach (var argument in expr.Arguments)
+            {
+                arguments.Add(Evaluate(argument));
+            }
+
+            // Check if the callee is actually a callable function
+            if (callee is not ILoxCallable function)
+            {
+                throw new RuntimeError(expr.Paren, "Can only call functions and classes.");
+            }
+
+            // Check if the argument count matches
+            if (arguments.Count != function.Arity)
+            {
+                throw new RuntimeError(expr.Paren, $"Expected {function.Arity} arguments but got {arguments.Count}.");
+            }
+
+            return function.Call(this, arguments);
+        }
+
+        public object VisitFunctionStmt(FunctionStmt stmt)
+        {
+            // Create a new LoxFunction, capturing the *current* environment
+            var function = new LoxFunction(stmt, _environment);
+
+            // Define the function in the *current* environment
+            _environment.Define(stmt.Name.Lexeme, function);
+            return null;
+        }
+
         private bool IsTruthy(object obj)
         {
             if (obj == null) return false;
@@ -259,6 +311,18 @@ namespace cslox
         {
             if (left is double && right is double) return;
             throw new RuntimeError(op, "Operands must be numbers.");
+        }
+
+        public object VisitReturnStmt(ReturnStmt stmt)
+        {
+            object value = null;
+            if (stmt.Value != null)
+            {
+                value = Evaluate(stmt.Value);
+            }
+
+            // Throw the special exception to unwind the stack
+            throw new Return(value);
         }
     }
 }

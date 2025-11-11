@@ -50,6 +50,20 @@ namespace cslox
             return Parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right);
         }
 
+        public string VisitCallExpr(Call expr)
+        {
+            var builder = new StringBuilder();
+            builder.Append("(");
+            builder.Append(expr.Callee.Accept(this));
+            foreach (var argument in expr.Arguments)
+            {
+                builder.Append(" ");
+                builder.Append(argument.Accept(this));
+            }
+            builder.Append(")");
+            return builder.ToString();
+        }
+
         /// <summary>
         /// Wraps an expression and its sub-expressions in parentheses.
         /// </summary>

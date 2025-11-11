@@ -40,10 +40,39 @@ namespace cslox
             return statements;
         }
 
+        // In Parser.cs
+        private Stmt Function(string kind)
+        {
+            Token name = Consume(TokenType.IDENTIFIER, $"Expect {kind} name.");
+
+            // Parse the parameter list
+            Consume(TokenType.LEFT_PAREN, $"Expect '(' after {kind} name.");
+            var parameters = new List<Token>();
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if (parameters.Count >= 255)
+                    {
+                        Error(Peek(), "Can't have more than 255 parameters.");
+                    }
+                    parameters.Add(Consume(TokenType.IDENTIFIER, "Expect parameter name."));
+                } while (Match(TokenType.COMMA));
+            }
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+
+            // Parse the body
+            Consume(TokenType.LEFT_BRACE, $"Expect '{{' before {kind} body.");
+            List<Stmt> body = Block(); // Block() already parses a list of statements!
+
+            return new FunctionStmt(name, parameters, body);
+        }
+
         private Stmt Declaration()
         {
             try
             {
+                if (Match(TokenType.FUN)) return Function("function");
                 if (Match(TokenType.VAR)) return VarDeclaration();
                 return Statement();
             }
@@ -73,6 +102,7 @@ namespace cslox
             if (Match(TokenType.FOR)) return ForStatement();
             if (Match(TokenType.IF)) return IfStatement();      
             if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Match(TokenType.RETURN)) return ReturnStatement();
             if (Match(TokenType.WHILE)) return WhileStatement();
             if (Match(TokenType.LEFT_BRACE)) return new BlockStmt(Block());
 
@@ -292,7 +322,61 @@ namespace cslox
                 Expr right = Unary();
                 return new Unary(op, right);
             }
-            return Primary();
+            return Call();
+        }
+
+        private Expr Call()
+        {
+            Expr expr = Primary(); // Parse the thing being called
+
+            // Loop to handle multiple calls like 'myFunc(1)(2)'
+            while (true)
+            {
+                if (Match(TokenType.LEFT_PAREN))
+                {
+                    expr = FinishCall(expr); // Parse the argument list
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return expr;
+        }
+
+        private Expr FinishCall(Expr callee)
+        {
+            var arguments = new List<Expr>();
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    // Check for too many arguments
+                    if (arguments.Count >= 255)
+                    {
+                        Error(Peek(), "Can't have more than 255 arguments.");
+                    }
+                    arguments.Add(Expression());
+                } while (Match(TokenType.COMMA));
+            }
+
+            Token paren = Consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+
+            return new Call(callee, paren, arguments);
+        }
+
+        private Stmt ReturnStatement()
+        {
+            Token keyword = Previous();
+            Expr value = null;
+            if (!Check(TokenType.SEMICOLON))
+            {
+                value = Expression(); // Parse the return value
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+            return new ReturnStmt(keyword, value);
         }
 
         private Expr Primary()

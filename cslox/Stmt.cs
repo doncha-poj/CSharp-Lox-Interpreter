@@ -13,6 +13,8 @@ namespace cslox
         T VisitPrintStmt(PrintStmt stmt);
         T VisitVarStmt(VarStmt stmt);
         T VisitWhileStmt(WhileStmt stmt);
+        T VisitFunctionStmt(FunctionStmt stmt);
+        T VisitReturnStmt(ReturnStmt stmt);
     }
 
     // -----------------------------------------------------------------
@@ -143,6 +145,42 @@ namespace cslox
         public override T Accept<T>(IStmtVisitor<T> visitor)
         {
             return visitor.VisitWhileStmt(this);
+        }
+    }
+
+    public class FunctionStmt : Stmt
+    {
+        public readonly Token Name;
+        public readonly List<Token> Parameters;
+        public readonly List<Stmt> Body;
+
+        public FunctionStmt(Token name, List<Token> parameters, List<Stmt> body)
+        {
+            Name = name;
+            Parameters = parameters;
+            Body = body;
+        }
+
+        public override T Accept<T>(IStmtVisitor<T> visitor)
+        {
+            return visitor.VisitFunctionStmt(this);
+        }
+    }
+
+    public class ReturnStmt : Stmt
+    {
+        public readonly Token Keyword;
+        public readonly Expr Value; // Can be null
+
+        public ReturnStmt(Token keyword, Expr value)
+        {
+            Keyword = keyword;
+            Value = value;
+        }
+
+        public override T Accept<T>(IStmtVisitor<T> visitor)
+        {
+            return visitor.VisitReturnStmt(this);
         }
     }
 }
