@@ -5,7 +5,9 @@ namespace cslox
 {
     public class Parser
     {
-        public class ParseError : Exception { }
+        // Nested ParseError class
+        private class ParseError : System.Exception { }
+
         private readonly List<Token> _tokens;
         private int _current = 0;
 
@@ -15,82 +17,161 @@ namespace cslox
         }
 
         /// <summary>
-        /// The main entry point. Keeps parsing statements
-        /// until it runs out of tokens.
+        /// The new main entry point. Parses a list of statements.
         /// </summary>
-        public Expr Parse()
+        public List<Stmt> Parse()
+        {
+            var statements = new List<Stmt>();
+            while (!IsAtEnd())
+            {
+                statements.Add(Declaration());
+            }
+            return statements;
+        }
+
+        // --- GRAMMAR RULE METHODS ---
+        // We start from the top-level "declaration" now.
+
+        // declaration → varDecl | statement
+        private Stmt Declaration()
         {
             try
             {
-                return Expression();
+                if (Match(TokenType.VAR)) return VarDeclaration();
+                return Statement();
             }
             catch (ParseError)
             {
-                return null; // Return null if a syntax error was found
+                Synchronize();
+                return null; // Return null, we'll filter it out
             }
         }
 
-        private Expr Expression()
+        // varDecl → "var" IDENTIFIER ( "=" expression )? ";"
+        private Stmt VarDeclaration()
         {
-            return Equality();
+            Token name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
+
+            Expr initializer = null;
+            if (Match(TokenType.EQUAL))
+            {
+                initializer = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+            return new VarStmt(name, initializer);
         }
 
+        // statement → exprStmt | printStmt
+        private Stmt Statement()
+        {
+            if (Match(TokenType.PRINT)) return PrintStatement();
+
+            return ExpressionStatement();
+        }
+
+        // printStmt → "print" expression ";"
+        private Stmt PrintStatement()
+        {
+            Expr value = Expression();
+            Consume(TokenType.SEMICOLON, "Expect ';' after value.");
+            return new PrintStmt(value);
+        }
+
+        // exprStmt → expression ";"
+        private Stmt ExpressionStatement()
+        {
+            Expr expr = Expression();
+            Consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+            return new ExpressionStmt(expr);
+        }
+
+        // expression → assignment
+        private Expr Expression()
+        {
+            return Assignment();
+        }
+
+        // assignment → IDENTIFIER "=" assignment | equality
+        private Expr Assignment()
+        {
+            Expr expr = Equality();
+
+            if (Match(TokenType.EQUAL))
+            {
+                Token equals = Previous();
+                Expr value = Assignment(); // Right-associative
+
+                if (expr is Variable variableExpr)
+                {
+                    Token name = variableExpr.Name;
+                    return new Assign(name, value);
+                }
+
+                Error(equals, "Invalid assignment target.");
+            }
+
+            return expr;
+        }
+
+        // equality → comparison ( ( "!=" | "==" ) comparison )*
+        // (Unchanged)
         private Expr Equality()
         {
             Expr expr = Comparison();
-
             while (Match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL))
             {
                 Token op = Previous();
                 Expr right = Comparison();
                 expr = new Binary(expr, op, right);
             }
-
             return expr;
         }
 
+        // comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )*
+        // (Unchanged)
         private Expr Comparison()
         {
             Expr expr = Term();
-
             while (Match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL))
             {
                 Token op = Previous();
                 Expr right = Term();
                 expr = new Binary(expr, op, right);
             }
-
             return expr;
         }
 
+        // term → factor ( ( "-" | "+" ) factor )*
+        // (Unchanged)
         private Expr Term()
         {
             Expr expr = Factor();
-
             while (Match(TokenType.MINUS, TokenType.PLUS))
             {
                 Token op = Previous();
                 Expr right = Factor();
                 expr = new Binary(expr, op, right);
             }
-
             return expr;
         }
 
+        // factor → unary ( ( "/" | "*" ) unary )*
+        // (Unchanged)
         private Expr Factor()
         {
             Expr expr = Unary();
-
             while (Match(TokenType.SLASH, TokenType.STAR))
             {
                 Token op = Previous();
                 Expr right = Unary();
                 expr = new Binary(expr, op, right);
             }
-
             return expr;
         }
 
+        // unary → ( "!" | "-" ) unary | primary
+        // (Unchanged)
         private Expr Unary()
         {
             if (Match(TokenType.BANG, TokenType.MINUS))
@@ -99,10 +180,11 @@ namespace cslox
                 Expr right = Unary();
                 return new Unary(op, right);
             }
-
             return Primary();
         }
 
+        // primary → ... | IDENTIFIER
+        // (Updated to add IDENTIFIER)
         private Expr Primary()
         {
             if (Match(TokenType.FALSE)) return new Literal(false);
@@ -114,6 +196,11 @@ namespace cslox
                 return new Literal(Previous().Literal);
             }
 
+            if (Match(TokenType.IDENTIFIER)) // <-- ADDED
+            {
+                return new Variable(Previous());
+            }
+
             if (Match(TokenType.LEFT_PAREN))
             {
                 Expr expr = Expression();
@@ -121,14 +208,12 @@ namespace cslox
                 return new Grouping(expr);
             }
 
-            // If no rules match, it's an error
             throw Error(Peek(), "Expect expression.");
         }
 
-        /// <summary>
-        /// Checks if the current token is one of the given types.
-        /// If so, it consumes the token and returns true.
-        /// </summary>
+
+        // --- HELPER & ERROR HANDLING METHODS ---
+
         private bool Match(params TokenType[] types)
         {
             foreach (var type in types)
@@ -142,80 +227,51 @@ namespace cslox
             return false;
         }
 
-        /// <summary>
-        /// Checks if the current token is the expected type.
-        /// If so, consumes it. If not, throws an error.
-        /// </summary>
-        private Token Consume(TokenType type, string message)
-        {
-            if (Check(type)) return Advance();
-            throw Error(Peek(), message);
-        }
-
-        /// <summary>
-        /// Checks if the current token is of the given type
-        /// (without consuming it).
-        /// </summary>
         private bool Check(TokenType type)
         {
             if (IsAtEnd()) return false;
             return Peek().Type == type;
         }
 
-        /// <summary>
-        /// Consumes the current token and returns it.
-        /// </summary>
         private Token Advance()
         {
             if (!IsAtEnd()) _current++;
             return Previous();
         }
 
-        /// <summary>
-        /// Checks if we've run out of tokens.
-        /// </summary>
         private bool IsAtEnd()
         {
             return Peek().Type == TokenType.EOF;
         }
 
-        /// <summary>
-        /// Returns the current token without consuming it.
-        /// </summary>
         private Token Peek()
         {
             return _tokens[_current];
         }
 
-        /// <summary>
-        /// Returns the previous token.
-        /// </summary>
         private Token Previous()
         {
             return _tokens[_current - 1];
         }
 
-        /// <summary>
-        /// Reports an error and returns the ParseError exception.
-        /// </summary>
+        private Token Consume(TokenType type, string message)
+        {
+            if (Check(type)) return Advance();
+            throw Error(Peek(), message);
+        }
+
         private ParseError Error(Token token, string message)
         {
             Lox.Error(token, message);
             return new ParseError();
         }
 
-        /// <summary>
-        /// Discards tokens until it finds a statement boundary.
-        /// Used to recover after a parse error.
-        /// </summary>
         private void Synchronize()
         {
             Advance();
-
             while (!IsAtEnd())
             {
                 if (Previous().Type == TokenType.SEMICOLON) return;
-
                 switch (Peek().Type)
                 {
                     case TokenType.CLASS:
@@ -228,7 +284,6 @@ namespace cslox
                     case TokenType.RETURN:
                         return;
                 }
-
                 Advance();
             }
         }
