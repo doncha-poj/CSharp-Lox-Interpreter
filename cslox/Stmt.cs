@@ -2,24 +2,52 @@
 
 namespace cslox
 {
-    // 1. The Visitor Interface (for Statements)
+    // -----------------------------------------------------------------
+    // 1. The Visitor Interface (UPDATED)
+    // -----------------------------------------------------------------
     public interface IStmtVisitor<T>
     {
+        T VisitBlockStmt(BlockStmt stmt);
         T VisitExpressionStmt(ExpressionStmt stmt);
+        T VisitIfStmt(IfStmt stmt);
         T VisitPrintStmt(PrintStmt stmt);
         T VisitVarStmt(VarStmt stmt);
+        T VisitWhileStmt(WhileStmt stmt);
     }
 
-    // 2. The Abstract Base Class
+    // -----------------------------------------------------------------
+    // 2. The Abstract Base Class (Unchanged)
+    // -----------------------------------------------------------------
     public abstract class Stmt
     {
         public abstract T Accept<T>(IStmtVisitor<T> visitor);
     }
 
+    // -----------------------------------------------------------------
     // 3. The Statement Subclasses
+    // -----------------------------------------------------------------
+
+    /// <summary>
+    /// A new statement type for a code block.
+    /// </summary>
+    public class BlockStmt : Stmt
+    {
+        public readonly List<Stmt> Statements;
+
+        public BlockStmt(List<Stmt> statements)
+        {
+            Statements = statements;
+        }
+
+        public override T Accept<T>(IStmtVisitor<T> visitor)
+        {
+            return visitor.VisitBlockStmt(this);
+        }
+    }
 
     /// <summary>
     /// A statement that is just an expression (e.g., "1 + 2;")
+    /// (Unchanged)
     /// </summary>
     public class ExpressionStmt : Stmt
     {
@@ -30,14 +58,37 @@ namespace cslox
             Expression = expression;
         }
 
-        public override T Accept<T>(IExprVisitor<T> visitor)
+        public override T Accept<T>(IStmtVisitor<T> visitor)
         {
             return visitor.VisitExpressionStmt(this);
         }
     }
 
     /// <summary>
+    /// A new statement type for an if-then-else.
+    /// </summary>
+    public class IfStmt : Stmt
+    {
+        public readonly Expr Condition;
+        public readonly Stmt ThenBranch;
+        public readonly Stmt ElseBranch; // Can be null
+
+        public IfStmt(Expr condition, Stmt thenBranch, Stmt elseBranch)
+        {
+            Condition = condition;
+            ThenBranch = thenBranch;
+            ElseBranch = elseBranch;
+        }
+
+        public override T Accept<T>(IStmtVisitor<T> visitor)
+        {
+            return visitor.VisitIfStmt(this);
+        }
+    }
+
+    /// <summary>
     /// A print statement (e.g., "print 1 + 2;")
+    /// (Unchanged)
     /// </summary>
     public class PrintStmt : Stmt
     {
@@ -48,7 +99,7 @@ namespace cslox
             Expression = expression;
         }
 
-        public override T Accept<T>(IExprVisitor<T> visitor)
+        public override T Accept<T>(IStmtVisitor<T> visitor)
         {
             return visitor.VisitPrintStmt(this);
         }
@@ -56,11 +107,12 @@ namespace cslox
 
     /// <summary>
     /// A variable declaration (e.g., "var a = 1;")
+    /// (Unchanged)
     /// </summary>
     public class VarStmt : Stmt
     {
         public readonly Token Name;
-        public readonly Expr Initializer; // Can be null
+        public readonly Expr Initializer;
 
         public VarStmt(Token name, Expr initializer)
         {
@@ -71,6 +123,26 @@ namespace cslox
         public override T Accept<T>(IStmtVisitor<T> visitor)
         {
             return visitor.VisitVarStmt(this);
+        }
+    }
+
+    /// <summary>
+    /// A new statement type for a while loop.
+    /// </summary>
+    public class WhileStmt : Stmt
+    {
+        public readonly Expr Condition;
+        public readonly Stmt Body;
+
+        public WhileStmt(Expr condition, Stmt body)
+        {
+            Condition = condition;
+            Body = body;
+        }
+
+        public override T Accept<T>(IStmtVisitor<T> visitor)
+        {
+            return visitor.VisitWhileStmt(this);
         }
     }
 }

@@ -26,6 +26,35 @@ namespace cslox
             }
         }
 
+        public object VisitIfStmt(IfStmt stmt)
+        {
+            // 1. Evaluate the condition
+            if (IsTruthy(Evaluate(stmt.Condition)))
+            {
+                // 2. If true, execute the 'then' branch
+                Execute(stmt.ThenBranch);
+            }
+            else if (stmt.ElseBranch != null)
+            {
+                // 3. If false and there is an 'else' branch, execute it
+                Execute(stmt.ElseBranch);
+            }
+
+            return null; // Statements don't return values
+        }
+
+        public object VisitWhileStmt(WhileStmt stmt)
+        {
+            // 1. Loop as long as the condition is truthy
+            while (IsTruthy(Evaluate(stmt.Condition)))
+            {
+                // 2. Execute the body
+                Execute(stmt.Body);
+            }
+
+            return null;
+        }
+
         public object VisitExpressionStmt(ExpressionStmt stmt)
         {
             Evaluate(stmt.Expression); // Evaluate for side-effects
@@ -152,6 +181,39 @@ namespace cslox
         private void Execute(Stmt stmt)
         {
             stmt.Accept(this);
+        }
+
+        public object VisitBlockStmt(BlockStmt stmt)
+        {
+            // Create a *new* environment for this block,
+            // with the current environment as its parent.
+            ExecuteBlock(stmt.Statements, new Environment(_environment));
+            return null;
+        }
+
+        public void ExecuteBlock(List<Stmt> statements, Environment environment)
+        {
+            // 1. Get the current environment before the block
+            Environment previous = this._environment;
+
+            try
+            {
+                // 2. Set the *new* environment for the block
+                this._environment = environment;
+
+                // 3. Execute all statements *inside* that new environment
+                foreach (var statement in statements)
+                {
+                    Execute(statement);
+                }
+            }
+            finally
+            {
+                // 4. IMPORTANT: Restore the previous environment
+                //    This 'finally' block ensures we exit the scope
+                //    even if an error (exception) occurs.
+                this._environment = previous;
+            }
         }
 
         private object Evaluate(Expr expr)

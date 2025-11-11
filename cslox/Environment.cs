@@ -4,7 +4,18 @@ namespace cslox
 {
     public class Environment
     {
+        public readonly Environment Enclosing;
         private readonly Dictionary<string, object> _values = new Dictionary<string, object>();
+
+        public Environment()
+        {
+            Enclosing = null;
+        }
+
+        public Environment(Environment enclosing)
+        {
+            Enclosing = enclosing;
+        }
 
         /// <summary>
         /// Defines a new variable in the current scope.
@@ -28,6 +39,11 @@ namespace cslox
                 return _values[name.Lexeme];
             }
 
+            if (Enclosing != null)
+            {
+                return Enclosing.Get(name);
+            }
+
             throw new RuntimeError(name, $"Undefined variable '{name.Lexeme}'.");
         }
 
@@ -40,6 +56,12 @@ namespace cslox
             if (_values.ContainsKey(name.Lexeme))
             {
                 _values[name.Lexeme] = value;
+                return;
+            }
+
+            if (Enclosing != null)
+            {
+                Enclosing.Assign(name, value);
                 return;
             }
 
