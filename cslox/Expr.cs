@@ -171,8 +171,8 @@
     /// used in the context of parsing or interpreting code.</remarks>
     public class Call : Expr
     {
-        public readonly Expr Callee; // The thing being called
-        public readonly Token Paren;  // The closing ')' for error reporting
+        public readonly Expr Callee;
+        public readonly Token Paren;
         public readonly List<Expr> Arguments;
 
         public Call(Expr callee, Token paren, List<Expr> arguments)

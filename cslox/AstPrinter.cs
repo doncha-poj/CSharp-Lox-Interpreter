@@ -52,16 +52,11 @@ namespace cslox
 
         public string VisitCallExpr(Call expr)
         {
-            var builder = new StringBuilder();
-            builder.Append("(");
-            builder.Append(expr.Callee.Accept(this));
-            foreach (var argument in expr.Arguments)
-            {
-                builder.Append(" ");
-                builder.Append(argument.Accept(this));
-            }
-            builder.Append(")");
-            return builder.ToString();
+            // Convert the List<Expr> to params Expr[] for Parenthesize
+            var args = new List<Expr> { expr.Callee };
+            args.AddRange(expr.Arguments);
+
+            return Parenthesize("call", args.ToArray());
         }
 
         /// <summary>
