@@ -109,4 +109,5 @@ namespace cslox
                 Report(token.Line, $" at '{token.Lexeme}'", message);
             }
         }
+    }
 }
