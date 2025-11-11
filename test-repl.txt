@@ -1,0 +1,47 @@
+Lox REPL (Single-Line) Tests
+============================
+Copy and paste the line after the '>' prompt and press Enter.
+The line after "Expected:" is what the interpreter should print.
+
+---
+Chapter 4/5/6/7: Expressions and Evaluation
+> print (5 - 1) * 2 / (1 + 1);
+Expected: 4
+
+---
+Chapter 8: Statements and State
+> var a = 10; a = a * 3; print a;
+Expected: 30
+
+---
+Chapter 9: Control Flow (if, and, or)
+> if (1 > 2 or "a" == "a") print "logic ok"; else print "logic bad";
+Expected: logic ok
+
+---
+Chapter 9: Control Flow (single-line 'while')
+Note: This is a test of a valid, but not very useful, single-line loop.
+> var i = 0; while (i < 3) i = i + 1; print i;
+Expected: 3
+
+---
+Chapter 9: Control Flow (single-line 'for')
+> for (var j = 0; j < 5; j = j + 1) print j;
+Expected:
+0
+1
+2
+3
+4
+
+---
+Chapter 10: Functions (Native Call)
+> print clock();
+Expected: (a large number representing the current system time)
+
+---
+Chapter 10: Functions (User-defined)
+Note: Multi-line function declarations are not possible in the REPL.
+This test confirms a single-line function *call* works.
+> fun sayHi() { print "hello"; } sayHi();
+Expected: hello

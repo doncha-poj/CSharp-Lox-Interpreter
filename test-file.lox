@@ -1,0 +1,134 @@
+// test-file.lox
+// An extensive test suite for the cslox interpreter.
+
+print "--- Chapter 7: Expressions ---";
+print 1 + 2 * 3; // Expected: 7
+print (1 + 2) * 3; // Expected: 9
+print 10 / 4; // Expected: 2.5
+print -10; // Expected: -10
+print !true; // Expected: false
+print !"string"; // Expected: false
+print !nil; // Expected: true
+print "hello" + " " + "world"; // Expected: hello world
+print 1 > 2; // Expected: false
+print 1 <= 1; // Expected: true
+print "a" == "a"; // Expected: true
+print "a" != "b"; // Expected: true
+
+print "--- Chapter 8: State & Variables ---";
+var a = 1;
+var b = "hello";
+var c; // uninitialized
+print a; // Expected: 1
+print b; // Expected: hello
+print c; // Expected: nil
+
+a = 2;
+b = b + "!";
+c = a;
+print a; // Expected: 2
+print b; // Expected: hello!
+print c; // Expected: 2
+
+print "--- Chapter 9: Control Flow & Scopes ---";
+
+// IF statement
+var t = 10;
+if (t > 5) {
+  print "t is greater than 5";
+} else {
+  print "t is not greater than 5";
+}
+// Expected: t is greater than 5
+
+// LOGICAL operators
+print true or false; // Expected: true
+print true and false; // Expected: false
+print nil or "right"; // Expected: right (testing short-circuit)
+print "left" and "right"; // Expected: right
+print nil and "right"; // Expected: nil (testing short-circuit)
+
+// WHILE loop
+var i = 0;
+while (i < 3) {
+  print i;
+  i = i + 1;
+}
+// Expected: 0, 1, 2
+
+// FOR loop
+print "for loop test:";
+for (var j = 0; j < 3; j = j + 1) {
+  print j;
+}
+// Expected: 0, 1, 2
+
+// SCOPING test
+var s = "global";
+{
+  var s = "local";
+  print s; // Expected: local
+}
+print s; // Expected: global
+
+var assign = "outer";
+{
+  assign = "inner"; // Re-assigns the *outer* variable
+  print assign; // Expected: inner
+}
+print assign; // Expected: inner
+
+print "--- Chapter 10: Functions ---";
+
+// Native function call
+print "clock() test (should be a small number):";
+var start = clock();
+print clock() - start;
+
+// Function declaration & call
+fun sayHi(first, last) {
+  print "Hi, " + first + " " + last + "!";
+}
+
+sayHi("Donald", "C."); // Expected: Hi, Donald C.!
+
+// Return values
+fun add(a, b) {
+  return a + b;
+}
+print "12 + 34 =";
+print add(12, 34); // Expected: 46
+
+// Implicit return (nil)
+fun implicitReturn() {
+  var a = 1;
+  // no return
+}
+print "implicit return:";
+print implicitReturn(); // Expected: nil
+
+// Recursion (Fibonacci)
+fun fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 2) + fib(n - 1);
+}
+
+print "fib(8) =";
+print fib(8); // Expected: 21
+
+// Closures
+fun makeCounter() {
+  var i = 0;
+  fun count() {
+    i = i + 1;
+    print i;
+  }
+  return count;
+}
+
+var counter = makeCounter();
+print "counter test:";
+counter(); // Expected: 1
+counter(); // Expected: 2
+
+print "--- All Tests Complete ---";
