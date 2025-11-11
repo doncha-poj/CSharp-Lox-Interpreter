@@ -29,6 +29,17 @@ namespace cslox
             return statements;
         }
 
+        private List<Stmt> Block()
+        {
+            var statements = new List<Stmt>();
+            while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
+            {
+                statements.Add(Declaration());
+            }
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+            return statements;
+        }
+
         private Stmt Declaration()
         {
             try
@@ -78,17 +89,6 @@ namespace cslox
             Expr expr = Expression();
             Consume(TokenType.SEMICOLON, "Expect ';' after expression.");
             return new ExpressionStmt(expr);
-        }
-
-        private Stmt Block()
-        {
-            var statements = new List<Stmt>();
-            while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
-            {
-                statements.Add(Declaration());
-            }
-            Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
-            return new BlockStmt(statements);
         }
 
         private Expr Expression()

@@ -3,7 +3,7 @@
 namespace cslox
 {
     // -----------------------------------------------------------------
-    // 1. The Visitor Interface (UPDATED)
+    // 1. The Visitor Interface
     // -----------------------------------------------------------------
     public interface IStmtVisitor<T>
     {
@@ -16,7 +16,7 @@ namespace cslox
     }
 
     // -----------------------------------------------------------------
-    // 2. The Abstract Base Class (Unchanged)
+    // 2. The Abstract Base Class
     // -----------------------------------------------------------------
     public abstract class Stmt
     {

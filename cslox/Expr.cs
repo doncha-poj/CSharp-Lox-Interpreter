@@ -8,6 +8,7 @@
         T VisitUnaryExpr(Unary expr);
         T VisitVariableExpr(Variable expr);
         T VisitAssignExpr(Assign expr);
+        T VisitLogicalExpr(Logical expr);
     }
 
     public abstract class Expr
@@ -136,6 +137,28 @@
         public override T Accept<T>(IExprVisitor<T> visitor)
         {
             return visitor.VisitAssignExpr(this);
+        }
+    }
+
+    /// <summary>
+    /// Represents a logical 'and' or 'or' operation.
+    /// </summary>
+    public class Logical : Expr
+    {
+        public readonly Expr Left;
+        public readonly Token Operator;
+        public readonly Expr Right;
+
+        public Logical(Expr left, Token op, Expr right)
+        {
+            Left = left;
+            Operator = op;
+            Right = right;
+        }
+
+        public override T Accept<T>(IExprVisitor<T> visitor)
+        {
+            return visitor.VisitLogicalExpr(this);
         }
     }
 }
