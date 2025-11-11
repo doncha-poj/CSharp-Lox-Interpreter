@@ -1,9 +1,35 @@
 ﻿using System.Collections.Generic;
+using System.Data.Common;
 
 namespace cslox
 {
     public class Scanner
     {
+        private static readonly Dictionary<string, TokenType> Keywords;
+
+        static Scanner() // This is a static constructor
+        {
+            Keywords = new Dictionary<string, TokenType>
+    {
+        {"and",    TokenType.AND},
+        {"class",  TokenType.CLASS},
+        {"else",   TokenType.ELSE},
+        {"false",  TokenType.FALSE},
+        {"for",    TokenType.FOR},
+        {"fun",    TokenType.FUN},
+        {"if",     TokenType.IF},
+        {"nil",    TokenType.NIL},
+        {"or",     TokenType.OR},
+        {"print",  TokenType.PRINT},
+        {"return", TokenType.RETURN},
+        {"super",  TokenType.SUPER},
+        {"this",   TokenType.THIS},
+        {"true",   TokenType.TRUE},
+        {"var",    TokenType.VAR},
+        {"while",  TokenType.WHILE}
+    };
+        }
+
         private readonly string _source;
         private readonly List<Token> _tokens = new List<Token>();
 
@@ -125,12 +151,33 @@ namespace cslox
                     {
                         Number();
                     }
+                    else if (IsAlpha(c))
+                    {
+                        Identifier();
+                    }
                     else
                     {
                         Lox.Error(_line, "Unexpected character.");
                     }
                     break;
             }
+        }
+
+        private void Identifier()
+        {
+            while (IsAlphaNumeric(Peek())) Advance();
+
+            // Get the text of the identifier
+            string text = _source.Substring(_start, _current - _start);
+
+            // See if it's a keyword
+            if (!Keywords.TryGetValue(text, out TokenType type))
+            {
+                // Not a keyword, it's a user-defined identifier
+                type = TokenType.IDENTIFIER;
+            }
+
+            AddToken(type);
         }
 
         private void Number()
@@ -201,6 +248,18 @@ namespace cslox
         {
             if (_current + 1 >= _source.Length) return '\0';
             return _source[_current + 1];
+        }
+
+        private bool IsAlpha(char c)
+        {
+            return (c >= 'a' && c <= 'z') ||
+                   (c >= 'A' && c <= 'Z') ||
+                    c == '_';
+        }
+
+        private bool IsAlphaNumeric(char c)
+        {
+            return IsAlpha(c) || IsDigit(c);
         }
 
         private bool IsDigit(char c)
