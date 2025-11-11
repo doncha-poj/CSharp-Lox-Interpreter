@@ -1,11 +1,5 @@
 ﻿namespace cslox
 {
-    // -----------------------------------------------------------------
-    // 1. The Visitor Interface
-    // This defines the "contract" for a visitor.
-    // It must have a Visit method for EACH expression type.
-    // The <T> makes it "generic," so it can return any type.
-    // -----------------------------------------------------------------
     public interface IExprVisitor<T>
     {
         T VisitBinaryExpr(Binary expr);
@@ -14,11 +8,6 @@
         T VisitUnaryExpr(Unary expr);
     }
 
-    // -----------------------------------------------------------------
-    // 2. The Abstract Base Class
-    // All expression classes (Binary, Literal, etc.)
-    // must inherit from this.
-    // -----------------------------------------------------------------
     public abstract class Expr
     {
         // This is the core of the Visitor Pattern.
@@ -26,11 +15,6 @@
         // which "accepts" a visitor.
         public abstract T Accept<T>(IExprVisitor<T> visitor);
     }
-
-    // -----------------------------------------------------------------
-    // 3. The Expression Subclasses
-    // Each of these represents one rule in our grammar.
-    // -----------------------------------------------------------------
 
     /// <summary>
     /// Represents a binary operation (e.g., 1 + 2)

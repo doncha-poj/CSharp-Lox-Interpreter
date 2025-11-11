@@ -12,7 +12,6 @@ namespace cslox
             return expr.Accept(this);
         }
 
-        // --- Visitor Implementations ---
 
         public string VisitBinaryExpr(Binary expr)
         {
