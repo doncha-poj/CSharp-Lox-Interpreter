@@ -6,6 +6,8 @@
         T VisitGroupingExpr(Grouping expr);
         T VisitLiteralExpr(Literal expr);
         T VisitUnaryExpr(Unary expr);
+        T VisitVariableExpr(Variable expr);
+        T VisitAssignExpr(Assign expr);
     }
 
     public abstract class Expr
@@ -95,6 +97,45 @@
         public override T Accept<T>(IExprVisitor<T> visitor)
         {
             return visitor.VisitUnaryExpr(this);
+        }
+    }
+
+    /// <summary>
+    /// Represents a variable expression in the abstract syntax tree (AST).
+    /// </summary>
+    /// <remarks>A variable expression is used to reference a variable by its name within the context of an
+    /// expression. This class is part of the visitor pattern implementation for processing expressions.</remarks>
+    public class Variable : Expr
+    {
+        public readonly Token Name;
+        public Variable(Token name)
+        {
+            Name = name;
+        }
+        public override T Accept<T>(IExprVisitor<T> visitor)
+        {
+            return visitor.VisitVariableExpr(this);
+        }
+    }
+
+    /// <summary>
+    /// Represents an assignment expression, which associates a value with a variable or property.
+    /// </summary>
+    /// <remarks>This expression is used to assign a value to a variable or property within the context of an
+    /// expression tree. The <see cref="Name"/> property identifies the variable or property being assigned, and the
+    /// <see cref="Value"/>  property represents the expression whose result will be assigned.</remarks>
+    public class Assign : Expr
+    {
+        public readonly Token Name;
+        public readonly Expr Value;
+        public Assign(Token name, Expr value)
+        {
+            Name = name;
+            Value = value;
+        }
+        public override T Accept<T>(IExprVisitor<T> visitor)
+        {
+            return visitor.VisitAssignExpr(this);
         }
     }
 }
