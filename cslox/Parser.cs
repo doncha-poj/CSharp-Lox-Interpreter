@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace cslox
 {
@@ -12,9 +13,123 @@ namespace cslox
             _tokens = tokens;
         }
 
-        // We will add the main Parse() method here later.
+        /// <summary>
+        /// The main entry point. Keeps parsing statements
+        /// until it runs out of tokens.
+        /// </summary>
+        public Expr Parse()
+        {
+            try
+            {
+                return Expression();
+            }
+            catch (ParseError)
+            {
+                return null; // Return null if a syntax error was found
+            }
+        }
 
-        // --- HELPER METHODS ---
+        private Expr Expression()
+        {
+            return Equality();
+        }
+
+        // equality → comparison ( ( "!=" | "==" ) comparison )*
+        private Expr Equality()
+        {
+            Expr expr = Comparison();
+
+            while (Match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL))
+            {
+                Token op = Previous();
+                Expr right = Comparison();
+                expr = new Binary(expr, op, right);
+            }
+
+            return expr;
+        }
+
+        // comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )*
+        private Expr Comparison()
+        {
+            Expr expr = Term();
+
+            while (Match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL))
+            {
+                Token op = Previous();
+                Expr right = Term();
+                expr = new Binary(expr, op, right);
+            }
+
+            return expr;
+        }
+
+        // term → factor ( ( "-" | "+" ) factor )*
+        private Expr Term()
+        {
+            Expr expr = Factor();
+
+            while (Match(TokenType.MINUS, TokenType.PLUS))
+            {
+                Token op = Previous();
+                Expr right = Factor();
+                expr = new Binary(expr, op, right);
+            }
+
+            return expr;
+        }
+
+        // factor → unary ( ( "/" | "*" ) unary )*
+        private Expr Factor()
+        {
+            Expr expr = Unary();
+
+            while (Match(TokenType.SLASH, TokenType.STAR))
+            {
+                Token op = Previous();
+                Expr right = Unary();
+                expr = new Binary(expr, op, right);
+            }
+
+            return expr;
+        }
+
+        // unary → ( "!" | "-" ) unary | primary
+        private Expr Unary()
+        {
+            if (Match(TokenType.BANG, TokenType.MINUS))
+            {
+                Token op = Previous();
+                Expr right = Unary();
+                return new Unary(op, right);
+            }
+
+            return Primary();
+        }
+
+        // primary → NUMBER | STRING | "true" | "false" | "nil"
+        //         | "(" expression ")"
+        private Expr Primary()
+        {
+            if (Match(TokenType.FALSE)) return new Literal(false);
+            if (Match(TokenType.TRUE)) return new Literal(true);
+            if (Match(TokenType.NIL)) return new Literal(null);
+
+            if (Match(TokenType.NUMBER, TokenType.STRING))
+            {
+                return new Literal(Previous().Literal);
+            }
+
+            if (Match(TokenType.LEFT_PAREN))
+            {
+                Expr expr = Expression();
+                Consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
+                return new Grouping(expr);
+            }
+
+            // If no rules match, it's an error
+            throw Error(Peek(), "Expect expression.");
+        }
 
         /// <summary>
         /// Checks if the current token is one of the given types.
@@ -31,6 +146,16 @@ namespace cslox
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// Checks if the current token is the expected type.
+        /// If so, consumes it. If not, throws an error.
+        /// </summary>
+        private Token Consume(TokenType type, string message)
+        {
+            if (Check(type)) return Advance();
+            throw Error(Peek(), message);
         }
 
         /// <summary>
@@ -74,6 +199,44 @@ namespace cslox
         private Token Previous()
         {
             return _tokens[_current - 1];
+        }
+
+        /// <summary>
+        /// Reports an error and returns the ParseError exception.
+        /// </summary>
+        private ParseError Error(Token token, string message)
+        {
+            Lox.Error(token, message);
+            return new ParseError();
+        }
+
+        /// <summary>
+        /// Discards tokens until it finds a statement boundary.
+        /// Used to recover after a parse error.
+        /// </summary>
+        private void Synchronize()
+        {
+            Advance();
+
+            while (!IsAtEnd())
+            {
+                if (Previous().Type == TokenType.SEMICOLON) return;
+
+                switch (Peek().Type)
+                {
+                    case TokenType.CLASS:
+                    case TokenType.FUN:
+                    case TokenType.VAR:
+                    case TokenType.FOR:
+                    case TokenType.IF:
+                    case TokenType.WHILE:
+                    case TokenType.PRINT:
+                    case TokenType.RETURN:
+                        return;
+                }
+
+                Advance();
+            }
         }
     }
 }
