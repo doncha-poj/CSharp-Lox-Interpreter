@@ -5,6 +5,7 @@ namespace cslox
 {
     public class Parser
     {
+        public class ParseError : Exception { }
         private readonly List<Token> _tokens;
         private int _current = 0;
 
@@ -34,7 +35,6 @@ namespace cslox
             return Equality();
         }
 
-        // equality → comparison ( ( "!=" | "==" ) comparison )*
         private Expr Equality()
         {
             Expr expr = Comparison();
@@ -49,7 +49,6 @@ namespace cslox
             return expr;
         }
 
-        // comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )*
         private Expr Comparison()
         {
             Expr expr = Term();
@@ -64,7 +63,6 @@ namespace cslox
             return expr;
         }
 
-        // term → factor ( ( "-" | "+" ) factor )*
         private Expr Term()
         {
             Expr expr = Factor();
@@ -79,7 +77,6 @@ namespace cslox
             return expr;
         }
 
-        // factor → unary ( ( "/" | "*" ) unary )*
         private Expr Factor()
         {
             Expr expr = Unary();
@@ -94,7 +91,6 @@ namespace cslox
             return expr;
         }
 
-        // unary → ( "!" | "-" ) unary | primary
         private Expr Unary()
         {
             if (Match(TokenType.BANG, TokenType.MINUS))
@@ -107,8 +103,6 @@ namespace cslox
             return Primary();
         }
 
-        // primary → NUMBER | STRING | "true" | "false" | "nil"
-        //         | "(" expression ")"
         private Expr Primary()
         {
             if (Match(TokenType.FALSE)) return new Literal(false);
