@@ -9,7 +9,14 @@ namespace cslox
     public static class Lox
     {
         static bool hadError = false;
+        static bool hadRuntimeError = false;
         private static readonly AstPrinter _astPrinter = new AstPrinter();
+        public static void RuntimeError(RuntimeError error)
+        {
+            Console.Error.WriteLine($"{error.Message}\n[line {error.Token.Line}]");
+            hadRuntimeError = true;
+        }
+
         static void Main(string[] args)
         {
             //Console.WriteLine("Hello, World!");
@@ -73,11 +80,16 @@ namespace cslox
             // Stop if there was a syntax error.
             if (hadError) return;
 
+            // Stop if there was a runtime error.
+            if (hadRuntimeError) return;
+
             // If no error, print the AST
-            if (expression != null)
-            {
-                Console.WriteLine(_astPrinter.Print(expression));
-            }
+            //if (expression != null)
+            //{
+            //    Console.WriteLine(_astPrinter.Print(expression));
+            //}
+
+            _interpreter.Interpret(expression);
         }
         /// <summary>
         /// Reports an error that occurred on a specific line with a given message.
