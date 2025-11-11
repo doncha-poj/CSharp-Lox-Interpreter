@@ -11,7 +11,7 @@ namespace cslox
         static bool hadError = false;
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello, World!");
+            //Console.WriteLine("Hello, World!");
             if (args.Length > 1)
             {
                 Console.WriteLine("Usage: cslox [script]");

@@ -56,7 +56,6 @@ namespace cslox
         }
 
         // This is the method we need to build next.
-        // It's empty for now, which will cause an infinite loop.
         private void ScanToken()
         {
             char c = Advance(); // Get the next character
@@ -74,7 +73,35 @@ namespace cslox
                 case ';': AddToken(TokenType.SEMICOLON); break;
                 case '*': AddToken(TokenType.STAR); break;
 
-                // --- We will add more cases here ---
+                // Handle '!' and '!='
+                case '!':
+                    AddToken(Match('=') ? TokenType.BANG_EQUAL : TokenType.BANG);
+                    break;
+                // Handle '=' and '=='
+                case '=':
+                    AddToken(Match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL);
+                    break;
+                // Handle '<' and '<='
+                case '<':
+                    AddToken(Match('=') ? TokenType.LESS_EQUAL : TokenType.LESS);
+                    break;
+                // Handle '>' and '>='
+                case '>':
+                    AddToken(Match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER);
+                    break;
+                // Handle '/' (SLASH) or '//' (COMMENT)
+                case '/':
+                    if (Match('/'))
+                    {
+                        // A comment goes until the end of the line.
+                        // We use Peek() to look ahead without consuming the newline
+                        while (Peek() != '\n' && !IsAtEnd()) Advance();
+                    }
+                    else
+                    {
+                        AddToken(TokenType.SLASH);
+                    }
+                    break;
 
                 // Handle whitespace
                 case ' ':
@@ -87,12 +114,98 @@ namespace cslox
                 case '\n':
                     _line++; // Increment line counter
                     break;
+                // Handle string literals
+                case '"':
+                    String(); // Call our new string helper
+                    break;
 
                 // Handle unrecognized characters
                 default:
-                    Lox.Error(_line, "Unexpected character.");
+                    if (IsDigit(c))
+                    {
+                        Number();
+                    }
+                    else
+                    {
+                        Lox.Error(_line, "Unexpected character.");
+                    }
                     break;
             }
+        }
+
+        private void Number()
+        {
+            // Consume all consecutive digits
+            while (IsDigit(Peek())) Advance();
+
+            // Look for a fractional part
+            if (Peek() == '.' && IsDigit(PeekNext()))
+            {
+                // Consume the "."
+                Advance();
+
+                // Consume the remaining digits
+                while (IsDigit(Peek())) Advance();
+            }
+
+            // Parse the string into a real C# double
+            // uses InvariantCulture to ensure '.' is always treated as a decimal point,
+            // regardless of the computer's regional settings.
+            string numberText = _source.Substring(_start, _current - _start);
+            double value = double.Parse(numberText, System.Globalization.CultureInfo.InvariantCulture);
+
+            AddToken(TokenType.NUMBER, value);
+        }
+
+        private void String()
+        {
+            // Keep consuming characters until we hit the closing "
+            while (Peek() != '"' && !IsAtEnd())
+            {
+                // Lox supports multi-line strings
+                if (Peek() == '\n') _line++;
+                Advance();
+            }
+
+            // Check for an unterminated string
+            if (IsAtEnd())
+            {
+                Lox.Error(_line, "Unterminated string.");
+                return;
+            }
+
+            // Consume the closing "
+            Advance();
+
+            // Extract the string value (trimming the surrounding quotes)
+            string value = _source.Substring(_start + 1, _current - _start - 2);
+            AddToken(TokenType.STRING, value);
+        }
+
+        private bool Match(char expected)
+        {
+            if (IsAtEnd()) return false;
+            if (_source[_current] != expected) return false;
+
+            _current++; // Consume the character
+            return true;
+        }
+
+        private char Peek()
+        {
+            if (IsAtEnd()) return '\0'; // '\0' is the C# "null" character
+            return _source[_current];
+        }
+
+        private char PeekNext()
+        {
+            if (_current + 1 >= _source.Length) return '\0';
+            return _source[_current + 1];
+        }
+
+        private bool IsDigit(char c)
+        {
+            return c >= '0' && c <= '9';
         }
     }
 }
