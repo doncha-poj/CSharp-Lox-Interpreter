@@ -9,6 +9,7 @@ namespace cslox
     public static class Lox
     {
         static bool hadError = false;
+        private static readonly AstPrinter _astPrinter = new AstPrinter();
         static void Main(string[] args)
         {
             //Console.WriteLine("Hello, World!");
@@ -66,21 +67,19 @@ namespace cslox
             Scanner scanner = new Scanner(source);
             List<Token> tokens = scanner.ScanTokens();
 
-            foreach (Token token in tokens)
+            Parser parser = new Parser(tokens);
+            Expr expression = parser.Parse();
+
+            // Stop if there was a syntax error.
+            if (hadError) return;
+
+            // If no error, print the AST
+            if (expression != null)
             {
-                Console.WriteLine(token);
+                Console.WriteLine(_astPrinter.Print(expression));
             }
         }
 
-        /// <summary>
-        /// The main error reporting method
-        /// </summary>
-        /// <param name="line"></param>
-        /// <param name="message"></param>
-        public static void Error(int line, string message)
-        {
-            Report(line, "", message);
-        }
 
         /// <summary>
         /// The help method for reporting errors
@@ -93,5 +92,21 @@ namespace cslox
             Console.Error.WriteLine($"[line {line}] Error{where}: {message}");
             hadError = true;
         }
-    }
+
+        /// <summary>
+        /// The main error reporting method
+        /// </summary>
+        /// <param name="line"></param>
+        /// <param name="message"></param>
+        public static void Error(Token token, string message)
+        {
+            if (token.Type == TokenType.EOF)
+            {
+                Report(token.Line, " at end", message);
+            }
+            else
+            {
+                Report(token.Line, $" at '{token.Lexeme}'", message);
+            }
+        }
 }
