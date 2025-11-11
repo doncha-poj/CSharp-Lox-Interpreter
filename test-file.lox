@@ -1,7 +1,7 @@
 // test-file.lox
 // An extensive test suite for the cslox interpreter.
 
-print "--- Chapter 7: Expressions ---";
+print "--- Chapter 4, 5, 6, 7: Expressions ---";
 print 1 + 2 * 3; // Expected: 7
 print (1 + 2) * 3; // Expected: 9
 print 10 / 4; // Expected: 2.5
