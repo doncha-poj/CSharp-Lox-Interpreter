@@ -143,7 +143,6 @@ namespace cslox
             return Evaluate(expr.Expression);
         }
 
-        // --- NEW: LOGICAL OPERATORS ---
         public object VisitLogicalExpr(Logical expr)
         {
             object left = Evaluate(expr.Left);

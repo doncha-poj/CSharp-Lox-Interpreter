@@ -70,8 +70,10 @@ namespace cslox
 
         private Stmt Statement()
         {
+            if (Match(TokenType.FOR)) return ForStatement();
+            if (Match(TokenType.IF)) return IfStatement();      
             if (Match(TokenType.PRINT)) return PrintStatement();
-
+            if (Match(TokenType.WHILE)) return WhileStatement();
             if (Match(TokenType.LEFT_BRACE)) return new BlockStmt(Block());
 
             return ExpressionStatement();
@@ -103,6 +105,73 @@ namespace cslox
             return new WhileStmt(condition, body);
         }
 
+        private Stmt ForStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+
+            // 1. The Initializer
+            Stmt initializer;
+            if (Match(TokenType.SEMICOLON))
+            {
+                initializer = null; // No initializer
+            }
+            else if (Match(TokenType.VAR))
+            {
+                initializer = VarDeclaration();
+            }
+            else
+            {
+                initializer = ExpressionStatement();
+            }
+
+            // 2. The Condition
+            Expr condition = null;
+            if (!Check(TokenType.SEMICOLON))
+            {
+                condition = Expression();
+            }
+            Consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+            // 3. The Increment
+            Expr increment = null;
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                increment = Expression();
+            }
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+            // 4. The Body
+            Stmt body = Statement();
+
+            // --- DESUGARING ---
+            // Now, build the while loop from the parts.
+
+            // If there's an increment, it runs *after* the body.
+            if (increment != null)
+            {
+                // We build a new block: { body; increment; }
+                body = new BlockStmt(new List<Stmt> { body, new ExpressionStmt(increment) });
+            }
+
+            // If there's no condition, make it 'true' for an infinite loop.
+            if (condition == null)
+            {
+                condition = new Literal(true);
+            }
+
+            // Create the main while loop.
+            body = new WhileStmt(condition, body);
+
+            // If there's an initializer, it runs *before* the while loop.
+            if (initializer != null)
+            {
+                // We build a new block: { initializer; while-loop; }
+                body = new BlockStmt(new List<Stmt> { initializer, body });
+            }
+
+            return body;
+        }
+
         private Stmt PrintStatement()
         {
             Expr value = Expression();
@@ -124,7 +193,7 @@ namespace cslox
 
         private Expr Assignment()
         {
-            Expr expr = Equality();
+            Expr expr = Or();
 
             if (Match(TokenType.EQUAL))
             {
