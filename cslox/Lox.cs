@@ -59,6 +59,7 @@ namespace cslox
                 if (line == null) break;
                 Run(line);
                 hadError = false;
+                hadRuntimeError = false;
             }
         }
 
