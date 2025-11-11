@@ -79,7 +79,15 @@ namespace cslox
                 Console.WriteLine(_astPrinter.Print(expression));
             }
         }
-
+        /// <summary>
+        /// Reports an error that occurred on a specific line with a given message.
+        /// </summary>
+        /// <param name="line">The line number where the error occurred. Must be a non-negative integer.</param>
+        /// <param name="message">A description of the error. Cannot be null or empty.</param>
+        public static void Error(int line, string message)
+        {
+            Report(line, "", message);
+        }
 
         /// <summary>
         /// The help method for reporting errors
