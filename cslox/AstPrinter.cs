@@ -35,6 +35,16 @@ namespace cslox
             return Parenthesize(expr.Operator.Lexeme, expr.Right);
         }
 
+        public string VisitVariableExpr(Variable expr)
+        {
+            return expr.Name.Lexeme;
+        }
+
+        public string VisitAssignExpr(Assign expr)
+        {
+            return Parenthesize($"= {expr.Name.Lexeme}", expr.Value);
+        }
+
         /// <summary>
         /// Wraps an expression and its sub-expressions in parentheses.
         /// </summary>

@@ -8,10 +8,10 @@ namespace cslox
 {
     public static class Lox
     {
-        private static readonly Interpreter _interpreter = new Interpreter();
         static bool hadError = false;
         static bool hadRuntimeError = false;
         private static readonly AstPrinter _astPrinter = new AstPrinter();
+        private static readonly Interpreter _interpreter = new Interpreter();
 
         static void Main(string[] args)
         {
@@ -35,7 +35,7 @@ namespace cslox
         /// Runs the lox file at the given path
         /// </summary>
         /// <param name="path"></param>
-        private static void RunFile(String path)
+        private static void RunFile(string path)
         {
             //byte[] bytes = File.ReadAllBytes(path);
             //string content = Encoding.Default.GetString(bytes);
@@ -55,7 +55,7 @@ namespace cslox
             while (true)
             {
                 Console.Write("> ");
-                string? line = Console.ReadLine();
+                var line = Console.ReadLine();
                 if (line == null) break;
                 Run(line);
                 hadError = false;
@@ -71,24 +71,16 @@ namespace cslox
         {
             Scanner scanner = new Scanner(source);
             List<Token> tokens = scanner.ScanTokens();
-
             Parser parser = new Parser(tokens);
-            Expr expression = parser.Parse();
+            List<Stmt> statements = parser.Parse();
 
             // Stop if there was a syntax error.
             if (hadError) return;
 
-            // Stop if there was a runtime error.
-            if (hadRuntimeError) return;
-
-            // If no error, print the AST
-            //if (expression != null)
-            //{
-            //    Console.WriteLine(_astPrinter.Print(expression));
-            //}
-
-            _interpreter.Interpret(expression);
+            // Run the interpreter!
+            _interpreter.Interpret(statements);
         }
+
         /// <summary>
         /// Reports an error that occurred on a specific line with a given message.
         /// </summary>

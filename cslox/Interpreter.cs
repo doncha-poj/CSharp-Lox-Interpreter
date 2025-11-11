@@ -3,19 +3,52 @@ using System.Collections.Generic;
 
 namespace cslox
 {
-    public class Interpreter : IExprVisitor<object>
+    public class Interpreter : IExprVisitor<object>, IStmtVisitor<object>
     {
-        public void Interpret(Expr expression)
+        // the memory
+        private Environment _environment = new Environment();
+        public void Interpret(List<Stmt> statements)
         {
             try
             {
-                object value = Evaluate(expression);
-                Console.WriteLine(Stringify(value));
+                foreach (var statement in statements)
+                {
+                    // Filter out null statements from parser errors
+                    if (statement != null)
+                    {
+                        Execute(statement);
+                    }
+                }
             }
             catch (RuntimeError error)
             {
                 Lox.RuntimeError(error);
             }
+        }
+
+        public object VisitExpressionStmt(ExpressionStmt stmt)
+        {
+            Evaluate(stmt.Expression); // Evaluate for side-effects
+            return null;
+        }
+
+        public object VisitPrintStmt(PrintStmt stmt)
+        {
+            object value = Evaluate(stmt.Expression);
+            Console.WriteLine(Stringify(value));
+            return null;
+        }
+
+        public object VisitVarStmt(VarStmt stmt)
+        {
+            object value = null;
+            if (stmt.Initializer != null)
+            {
+                value = Evaluate(stmt.Initializer);
+            }
+
+            _environment.Define(stmt.Name.Lexeme, value);
+            return null;
         }
 
         public object VisitLiteralExpr(Literal expr)
@@ -102,6 +135,23 @@ namespace cslox
 
             // Unreachable.
             return null;
+        }
+
+        public object VisitVariableExpr(Variable expr)
+        {
+            return _environment.Get(expr.Name);
+        }
+
+        public object VisitAssignExpr(Assign expr)
+        {
+            object value = Evaluate(expr.Value);
+            _environment.Assign(expr.Name, value);
+            return value; // Assignment is an expression
+        }
+
+        private void Execute(Stmt stmt)
+        {
+            stmt.Accept(this);
         }
 
         private object Evaluate(Expr expr)

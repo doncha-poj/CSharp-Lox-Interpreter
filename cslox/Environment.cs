@@ -47,6 +47,3 @@ namespace cslox
         }
     }
 }
-{
-    }
-}
