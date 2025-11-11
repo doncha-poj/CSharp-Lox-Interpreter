@@ -29,10 +29,6 @@ namespace cslox
             return statements;
         }
 
-        // --- GRAMMAR RULE METHODS ---
-        // We start from the top-level "declaration" now.
-
-        // declaration → varDecl | statement
         private Stmt Declaration()
         {
             try
@@ -47,7 +43,6 @@ namespace cslox
             }
         }
 
-        // varDecl → "var" IDENTIFIER ( "=" expression )? ";"
         private Stmt VarDeclaration()
         {
             Token name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
@@ -62,7 +57,6 @@ namespace cslox
             return new VarStmt(name, initializer);
         }
 
-        // statement → exprStmt | printStmt
         private Stmt Statement()
         {
             if (Match(TokenType.PRINT)) return PrintStatement();
@@ -70,7 +64,6 @@ namespace cslox
             return ExpressionStatement();
         }
 
-        // printStmt → "print" expression ";"
         private Stmt PrintStatement()
         {
             Expr value = Expression();
@@ -78,7 +71,6 @@ namespace cslox
             return new PrintStmt(value);
         }
 
-        // exprStmt → expression ";"
         private Stmt ExpressionStatement()
         {
             Expr expr = Expression();
@@ -86,13 +78,11 @@ namespace cslox
             return new ExpressionStmt(expr);
         }
 
-        // expression → assignment
         private Expr Expression()
         {
             return Assignment();
         }
 
-        // assignment → IDENTIFIER "=" assignment | equality
         private Expr Assignment()
         {
             Expr expr = Equality();
@@ -114,8 +104,6 @@ namespace cslox
             return expr;
         }
 
-        // equality → comparison ( ( "!=" | "==" ) comparison )*
-        // (Unchanged)
         private Expr Equality()
         {
             Expr expr = Comparison();
@@ -128,8 +116,6 @@ namespace cslox
             return expr;
         }
 
-        // comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )*
-        // (Unchanged)
         private Expr Comparison()
         {
             Expr expr = Term();
@@ -142,8 +128,6 @@ namespace cslox
             return expr;
         }
 
-        // term → factor ( ( "-" | "+" ) factor )*
-        // (Unchanged)
         private Expr Term()
         {
             Expr expr = Factor();
@@ -156,8 +140,6 @@ namespace cslox
             return expr;
         }
 
-        // factor → unary ( ( "/" | "*" ) unary )*
-        // (Unchanged)
         private Expr Factor()
         {
             Expr expr = Unary();
@@ -170,8 +152,6 @@ namespace cslox
             return expr;
         }
 
-        // unary → ( "!" | "-" ) unary | primary
-        // (Unchanged)
         private Expr Unary()
         {
             if (Match(TokenType.BANG, TokenType.MINUS))
@@ -183,8 +163,6 @@ namespace cslox
             return Primary();
         }
 
-        // primary → ... | IDENTIFIER
-        // (Updated to add IDENTIFIER)
         private Expr Primary()
         {
             if (Match(TokenType.FALSE)) return new Literal(false);
@@ -196,7 +174,7 @@ namespace cslox
                 return new Literal(Previous().Literal);
             }
 
-            if (Match(TokenType.IDENTIFIER)) // <-- ADDED
+            if (Match(TokenType.IDENTIFIER))
             {
                 return new Variable(Previous());
             }
