@@ -8,14 +8,10 @@ namespace cslox
 {
     public static class Lox
     {
+        private static readonly Interpreter _interpreter = new Interpreter();
         static bool hadError = false;
         static bool hadRuntimeError = false;
         private static readonly AstPrinter _astPrinter = new AstPrinter();
-        public static void RuntimeError(RuntimeError error)
-        {
-            Console.Error.WriteLine($"{error.Message}\n[line {error.Token.Line}]");
-            hadRuntimeError = true;
-        }
 
         static void Main(string[] args)
         {
@@ -48,6 +44,7 @@ namespace cslox
             Run(source);
 
             if (hadError) System.Environment.Exit(65);
+            if (hadRuntimeError) System.Environment.Exit(70);
         }
 
         /// <summary>
@@ -128,6 +125,11 @@ namespace cslox
             {
                 Report(token.Line, $" at '{token.Lexeme}'", message);
             }
+        }
+        public static void RuntimeError(RuntimeError error)
+        {
+            Console.Error.WriteLine($"{error.Message}\n[line {error.Token.Line}]");
+            hadRuntimeError = true;
         }
     }
 }
