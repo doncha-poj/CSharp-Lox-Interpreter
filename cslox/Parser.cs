@@ -77,6 +77,32 @@ namespace cslox
             return ExpressionStatement();
         }
 
+        private Stmt IfStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+            Expr condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+
+            Stmt thenBranch = Statement();
+            Stmt elseBranch = null;
+            if (Match(TokenType.ELSE))
+            {
+                elseBranch = Statement();
+            }
+
+            return new IfStmt(condition, thenBranch, elseBranch);
+        }
+
+        private Stmt WhileStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+            Expr condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.");
+            Stmt body = Statement();
+
+            return new WhileStmt(condition, body);
+        }
+
         private Stmt PrintStatement()
         {
             Expr value = Expression();
@@ -114,6 +140,30 @@ namespace cslox
                 Error(equals, "Invalid assignment target.");
             }
 
+            return expr;
+        }
+
+        private Expr Or()
+        {
+            Expr expr = And();
+            while (Match(TokenType.OR))
+            {
+                Token op = Previous();
+                Expr right = And();
+                expr = new Logical(expr, op, right);
+            }
+            return expr;
+        }
+
+        private Expr And()
+        {
+            Expr expr = Equality();
+            while (Match(TokenType.AND))
+            {
+                Token op = Previous();
+                Expr right = Equality();
+                expr = new Logical(expr, op, right);
+            }
             return expr;
         }
 
